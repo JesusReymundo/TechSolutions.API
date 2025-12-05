@@ -1,0 +1,11 @@
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\bin\Debug\net8.0\TechSolutions.Core.deps.json
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\bin\Debug\net8.0\TechSolutions.Core.dll
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\bin\Debug\net8.0\TechSolutions.Core.pdb
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debug\net8.0\TechSolutions.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debug\net8.0\TechSolutions.Core.AssemblyInfoInputs.cache
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debug\net8.0\TechSolutions.Core.AssemblyInfo.cs
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debug\net8.0\TechSolutions.Core.csproj.CoreCompileInputs.cache
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debug\net8.0\TechSolutions.Core.dll
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debug\net8.0\refint\TechSolutions.Core.dll
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debug\net8.0\TechSolutions.Core.pdb
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debug\net8.0\ref\TechSolutions.Core.dll
