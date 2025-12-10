@@ -9,3 +9,4 @@ C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debu
 C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debug\net8.0\refint\TechSolutions.Core.dll
 C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debug\net8.0\TechSolutions.Core.pdb
 C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debug\net8.0\ref\TechSolutions.Core.dll
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.Core\obj\Debug\net8.0\TechSolutions.Core.sourcelink.json

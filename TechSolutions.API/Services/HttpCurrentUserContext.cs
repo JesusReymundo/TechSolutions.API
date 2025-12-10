@@ -1,12 +1,13 @@
-using System;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
 using TechSolutions.Core.Security;
 
 namespace TechSolutions.API.Services
 {
-    // Implementa ICurrentUserContext leyendo datos del request
-    // (querystring o headers)
+    /// <summary>
+    /// Implementación de ICurrentUserContext que obtiene la info del usuario
+    /// desde el HttpContext. Si no hay autenticación, devuelve un usuario con rol Manager.
+    /// </summary>
     public class HttpCurrentUserContext : ICurrentUserContext
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -18,34 +19,29 @@ namespace TechSolutions.API.Services
 
         public UserContext GetCurrentUser()
         {
-            var httpContext = _httpContextAccessor.HttpContext
-                ?? throw new InvalidOperationException("No HttpContext available.");
+            var httpContext = _httpContextAccessor.HttpContext;
 
-            var headers = httpContext.Request.Headers;
-            var query = httpContext.Request.Query;
-
-            // Permite probar fácil desde Swagger:
-            // /api/Reports/monthly?year=2025&month=12&userName=Ana&role=Manager
-            var userName =
-                query["userName"].FirstOrDefault() ??
-                headers["X-User-Name"].FirstOrDefault() ??
-                "Invitado";
-
-            var roleHeader =
-                query["role"].FirstOrDefault() ??
-                headers["X-User-Role"].FirstOrDefault() ??
-                "Viewer";
-
-            if (!Enum.TryParse<UserRole>(roleHeader, ignoreCase: true, out var role))
+            // Sin contexto HTTP o usuario no autenticado → rol por defecto Manager
+            if (httpContext?.User?.Identity == null || !httpContext.User.Identity.IsAuthenticated)
             {
-                role = UserRole.Viewer;
+                return new UserContext("anonymous", UserRole.Manager);
             }
 
-            return new UserContext
+            var userName = httpContext.User.Identity.Name ?? "anonymous";
+
+            // Intentar leer el claim "role" (opcional)
+            var roleClaim = httpContext.User.Claims
+                .FirstOrDefault(c => c.Type == "role")
+                ?.Value;
+
+            // Sólo manejamos Manager, cualquier otro valor cae a Manager.
+            var role = roleClaim switch
             {
-                UserName = userName,
-                Role = role
+                "Manager" => UserRole.Manager,
+                _         => UserRole.Manager
             };
+
+            return new UserContext(userName, role);
         }
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using TechSolutions.API.Dtos;
+using System;
+using System.Collections.Generic;
 using TechSolutions.Core.Orders;
 
 namespace TechSolutions.API.Controllers
@@ -15,108 +16,91 @@ namespace TechSolutions.API.Controllers
             _orderService = orderService;
         }
 
+        // GET: api/Orders
         [HttpGet]
         public ActionResult<IEnumerable<Order>> GetAll()
         {
-            var orders = _orderService.GetAll();
+            var orders = _orderService.GetAllOrders();
             return Ok(orders);
         }
 
-        [HttpGet("{id:int}")]
-        public ActionResult<Order> GetById(int id)
+        // GET: api/Orders/{id}
+        [HttpGet("{id:guid}")]
+        public ActionResult<Order> GetById(Guid id)
         {
-            try
-            {
-                var order = _orderService.GetById(id);
-                return Ok(order);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
+            var order = _orderService.GetOrderById(id);
+            if (order == null) return NotFound();
+            return Ok(order);
         }
 
+        // POST: api/Orders
         [HttpPost]
         public ActionResult<Order> Create([FromBody] CreateOrderRequest request)
         {
-            var order = _orderService.CreateOrder(request.CustomerName, request.Amount);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var order = _orderService.CreateOrder(
+                request.CustomerName,
+                request.Amount,
+                request.Description ?? string.Empty
+            );
+
             return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
         }
 
-        [HttpPost("{id:int}/process")]
-        public ActionResult<Order> Process(int id)
+        // POST: api/Orders/{id}/process
+        [HttpPost("{id:guid}/process")]
+        public ActionResult<Order> Process(Guid id)
         {
-            try
-            {
-                var order = _orderService.Process(id);
-                return Ok(order);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var order = _orderService.ProcessOrder(id);
+            if (order == null) return NotFound();
+            return Ok(order);
         }
 
-        [HttpPost("{id:int}/discount")]
-        public ActionResult<Order> ApplyDiscount(int id, [FromBody] ApplyOrderDiscountRequest request)
+        // POST: api/Orders/{id}/cancel
+        [HttpPost("{id:guid}/cancel")]
+        public ActionResult<Order> Cancel(Guid id)
         {
-            try
-            {
-                var order = _orderService.ApplyDiscount(id, request.DiscountPercentage);
-                return Ok(order);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (ArgumentOutOfRangeException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var order = _orderService.CancelOrder(id);
+            if (order == null) return NotFound();
+            return Ok(order);
         }
 
-        [HttpPost("{id:int}/cancel")]
-        public ActionResult<Order> Cancel(int id)
+        // POST: api/Orders/{id}/discount
+        [HttpPost("{id:guid}/discount")]
+        public ActionResult<Order> ApplyDiscount(Guid id, [FromBody] ApplyDiscountRequest request)
         {
-            try
-            {
-                var order = _orderService.Cancel(id);
-                return Ok(order);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var order = _orderService.ApplyDiscount(id, request.Percentage);
+            if (order == null) return NotFound();
+            return Ok(order);
         }
 
-        [HttpPost("{id:int}/undo")]
-        public ActionResult<Order> UndoLast(int id)
+        // POST: api/Orders/undo
+        // Usa Command + Memento para deshacer la última operación de esa orden
+        [HttpPost("undo")]
+        public ActionResult<Order> UndoLast([FromBody] UndoOrderRequest request)
         {
-            try
-            {
-                var success = _orderService.UndoLast(id);
-                if (!success)
-                    return BadRequest(new { message = "No hay más cambios para deshacer en este pedido." });
-
-                var order = _orderService.GetById(id);
-                return Ok(order);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
+            var order = _orderService.UndoLast(request.OrderId);
+            if (order == null) return NotFound();
+            return Ok(order);
         }
+    }
+
+    public class CreateOrderRequest
+    {
+        public string CustomerName { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string? Description { get; set; }
+    }
+
+    public class ApplyDiscountRequest
+    {
+        public decimal Percentage { get; set; }
+    }
+
+    public class UndoOrderRequest
+    {
+        public Guid OrderId { get; set; }
     }
 }

@@ -1,31 +1,38 @@
+using System;
 using System.Collections.Generic;
 
 namespace TechSolutions.Core.Orders
 {
-    public class OrderHistory
+    /// <summary>
+    /// Guarda el historial de comandos y snapshots (Command + Memento).
+    /// </summary>
+    public class OrderCommandHistory
     {
-        private readonly Dictionary<int, Stack<OrderMemento>> _history = new();
+        private readonly Stack<(Guid orderId, OrderMemento snapshot, IOrderCommand command)> _history
+            = new Stack<(Guid, OrderMemento, IOrderCommand)>();
 
-        public void SaveState(Order order)
+        public void SaveSnapshot(Order order, IOrderCommand command)
         {
-            if (!_history.TryGetValue(order.Id, out var stack))
-            {
-                stack = new Stack<OrderMemento>();
-                _history[order.Id] = stack;
-            }
+            if (order == null) throw new ArgumentNullException(nameof(order));
+            if (command == null) throw new ArgumentNullException(nameof(command));
 
-            stack.Push(new OrderMemento(order.Status, order.Amount, order.DiscountPercentage));
+            var memento = order.CreateMemento();
+            _history.Push((order.Id, memento, command));
         }
 
-        public bool TryRestoreLastState(Order order)
+        public bool TryRestoreLastSnapshot(Order order)
         {
-            if (!_history.TryGetValue(order.Id, out var stack) || stack.Count == 0)
-                return false;
+            if (order == null) throw new ArgumentNullException(nameof(order));
+            if (_history.Count == 0) return false;
 
-            var memento = stack.Pop();
-            order.Status = memento.Status;
-            order.Amount = memento.Amount;
-            order.DiscountPercentage = memento.DiscountPercentage;
+            var (orderId, snapshot, command) = _history.Peek();
+            if (orderId != order.Id) return false;
+
+            _history.Pop();
+
+            order.Restore(snapshot);
+            command.Undo(order);
+
             return true;
         }
     }

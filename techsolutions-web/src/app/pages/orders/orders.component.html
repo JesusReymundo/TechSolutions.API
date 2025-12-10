@@ -1,0 +1,50 @@
+<div class="page">
+  <header class="page-header">
+    <h1 class="page-header-title">Órdenes</h1>
+    <p class="page-header-subtitle">
+      Crea nuevas órdenes y envíalas al servicio de órdenes.
+    </p>
+  </header>
+
+  <section class="card">
+    <form class="form-grid" (ngSubmit)="createOrder()" #orderForm="ngForm">
+      <div class="form-field">
+        <label for="customerName">Cliente</label>
+        <input
+          id="customerName"
+          type="text"
+          name="customerName"
+          [(ngModel)]="customerName"
+          required
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="orderAmount">Monto</label>
+        <input
+          id="orderAmount"
+          type="number"
+          name="amount"
+          [(ngModel)]="amount"
+          required
+          min="0"
+          step="0.01"
+        />
+      </div>
+
+      <div class="form-field" style="align-self: end">
+        <button
+          class="btn btn-primary"
+          type="submit"
+          [disabled]="orderForm.invalid"
+        >
+          Crear orden
+        </button>
+      </div>
+    </form>
+
+    <p *ngIf="message" class="alert alert-info">
+      {{ message }}
+    </p>
+  </section>
+</div>

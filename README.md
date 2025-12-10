@@ -1,252 +1,390 @@
-# TechSolutions.API – Caso práctico Patrones de Diseño de Software
+# TechSolutions – Plataforma Web de Gestión (Pagos, Órdenes, Inventario, Precios y Reportes)
 
-Proyecto backend desarrollado para el caso **TechSolutions S.A.**, orientado a pymes que necesitan gestionar pagos, pedidos, inventario, catálogo de productos y reportes financieros.
+Proyecto desarrollado como evaluación final del curso **Patrones de Diseño de Software**, basado en el caso **TechSolutions**.
 
-Curso: **Patrones de Diseño de Software**  
-Estudiante: **Reymundo Jesús Roman**  
-Repositorio: https://github.com/JesusReymundo/TechSolutions.API  
+La solución implementa una **API REST en .NET** y un **frontend en Angular** que resuelven los requerimientos del caso aplicando distintos patrones de diseño: Adapter, Strategy, Observer, Command, Memento, Proxy e Iterator.
 
 ---
 
-## 🎯 Objetivo del proyecto
+## 1. Arquitectura general
 
-Aplicar **patrones de diseño (GOF y GRASP)** en una API REST construida con **.NET 8** para resolver los requerimientos RF1–RF12 del caso TechSolutions:
+La solución está dividida en tres proyectos principales:
 
-- Integración con varias pasarelas de pago.
-- Control de acceso a reportes.
-- Gestión de inventario con alertas de stock.
-- Procesamiento de pedidos con historial y deshacer.
-- Políticas de precios configurables.
-- Catálogo de productos con recorrido eficiente.
+- **TechSolutions.Core**  
+  Biblioteca de clases con la **lógica de negocio** y los **patrones de diseño**:
+  - Pagos (`Payments`)
+  - Órdenes (`Orders`)
+  - Inventario (`Inventory`)
+  - Precios (`Pricing`)
+  - Catálogo (`Catalog`)
+  - Seguridad y usuarios (`Security`)
+  - Reportes (`Reports`)
 
----
+- **TechSolutions.API**  
+  Proyecto **ASP.NET Core Web API** que expone los casos de uso del negocio:
+  - Controladores REST (`Controllers`)
+  - Configuración de inyección de dependencias (`Program.cs`)
+  - Servicios específicos de infraestructura (adapters concretos, contexto de usuario HTTP, etc.)
+  - Documentación con **Swagger**.
 
-## 🧱 Arquitectura general
+- **techsolutions-web**  
+  Frontend **Angular** que consume la API:
+  - Módulos: Dashboard, Pagos, Órdenes, Inventario, Precios, Catálogo, Reportes.
+  - Navegación SPA y consumo de endpoints vía `HttpClient`.
+  - Estilo similar a panel administrativo.
 
-La solución está dividida en tres proyectos:
+Comunicación:
 
-### 1. TechSolutions.API
-Capa de presentación (Web API).
+```text
+Angular (techsolutions-web)  -->  TechSolutions.API  -->  TechSolutions.Core
+2. Requisitos previos
+.NET SDK 8.x o superior
 
-- `Controllers/`
-  - `PaymentsController`  
-  - `ReportsController`  
-  - `InventoryController`  
-  - `OrdersController`  
-  - `PricingController`  
-  - `CatalogController`
-- `Dtos/`
-  - Modelos para requests/responses (por ejemplo `PaymentRequest`, `ApplyPriceRequest`, etc.).
-- `Program.cs`
-  - Configuración de DI (Dependency Injection), Swagger y mapeo de endpoints.
+Node.js 18+
 
-### 2. TechSolutions.Core
-Capa de dominio y lógica de negocio.
-
-- `Payments/` → Adapter + configuración de pasarelas  
-- `Reports/` → Proxy de reportes  
-- `Inventory/` → Observer de stock  
-- `Pricing/` → Strategy de precios + configuración global  
-- `Orders/` → Command + Memento para pedidos  
-- `Catalog/` → Iterator de productos  
-- `Security/` → Contexto de usuario y roles  
-- `Entities/` → Entidades compartidas (`Product`, etc.)
-
-### 3. TechSolutions.Tests
-Proyecto de pruebas unitarias con **xUnit**:
-
-- `PricingServiceTests` → valida lógicas de precios (Strategy).
-- `OrderServiceTests` → valida historial y deshacer (Command + Memento).
-
-Esta separación permite aplicar principios **GRASP**:  
-*Controller, Alta Cohesión, Bajo Acoplamiento y Polimorfismo.*
-
----
-
-## 🧩 Patrones de diseño aplicados
-
-### Adapter – Integración de pasarelas de pago
-
-- **Clases clave**
-  - `IPaymentProcessor`
-  - `PayPalAdapter`, `YapeAdapter`, `PlinAdapter`
-  - `PayPalService`, `YapeService`, `PlinService`
-  - `PaymentConfiguration`
-- **Endpoints**
-  - `POST /api/Payments` → procesa un pago con la pasarela elegida.
-  - `GET /api/Payments/config` → lista pasarelas habilitadas.
-  - `POST /api/Payments/config/enable` → habilita una pasarela.
-  - `POST /api/Payments/config/disable` → deshabilita una pasarela.
-- **Intención**  
-  Unificar bajo una única interfaz el uso de diferentes pasarelas (PayPal, Yape, Plin) sin que el controlador conozca los detalles de cada SDK. La configuración permite cumplir RF2 (habilitar/deshabilitar).
-
----
-
-### Proxy – Acceso a reportes financieros
-
-- **Clases clave**
-  - `IReportService`
-  - `RealReportService`
-  - `ReportServiceProxy`
-  - `ICurrentUserContext`, `HttpCurrentUserContext`
-  - `UserContext`, `UserRole`
-- **Endpoint**
-  - `GET /api/Reports/monthly`
-- **Intención**  
-  `ReportServiceProxy` actúa como sustituto de `RealReportService`, verificando el rol del usuario (Manager/Accountant) antes de permitir el acceso al reporte mensual (RF3 y RF4).
-
----
-
-### Observer – Alertas de stock bajo
-
-- **Clases clave**
-  - `InventoryItem`, `InventoryService`
-  - `IStockObserver`
-  - `ManagerStockObserver`, `PurchasingStockObserver`
-- **Endpoints**
-  - `GET /api/Inventory` → lista de productos en inventario.
-  - `POST /api/Inventory/adjust` → ajusta stock (incrementa/decrementa).
-  - `PUT /api/Inventory/minimumStock` → configura el stock mínimo por producto.
-- **Intención**  
-  Cuando el stock de un producto baja por debajo del mínimo configurado, `InventoryService` notifica a los observadores (Gerencia y Compras) generando mensajes de alerta (RF5 y RF6).
-
----
-
-### Strategy – Políticas de precios
-
-- **Clases clave**
-  - `Product` (en `Entities`)
-  - `PricingService`
-  - `IPriceStrategy`
-  - `StandardPriceStrategy`, `DiscountPriceStrategy`, `DynamicPriceStrategy`
-  - `PriceContext`
-  - `PricingConfiguration`
-- **Endpoints**
-  - `GET /api/Pricing/products` → catálogo básico de productos con precio base.
-  - `GET /api/Pricing/config` → estrategia de precios por defecto y parámetros.
-  - `PUT /api/Pricing/config` → admin configura estrategia global (RF10).
-  - `POST /api/Pricing/apply`  
-    - Permite:
-      - Elegir explícitamente una estrategia, o  
-      - Usar la estrategia configurada globalmente (`UseConfiguredStrategy = true`).
-- **Intención**  
-  Cambiar la forma de calcular el precio final (estándar, descuento porcentual, precio dinámico según demanda) sin modificar el código cliente, solo agregando nuevas estrategias.
-
----
-
-### Command + Memento – Procesamiento de pedidos y deshacer
-
-- **Clases clave**
-  - `Order`, `OrderStatus`
-  - `IOrderCommand`
-  - `ProcessOrderCommand`, `CancelOrderCommand`, `ApplyDiscountCommand`
-  - `OrderHistory`, `OrderMemento`
-  - `OrderService`
-- **Endpoints**
-  - `GET /api/Orders` → lista de pedidos.
-  - `GET /api/Orders/{id}` → detalle de pedido.
-  - `POST /api/Orders` → crea pedido.
-  - `POST /api/Orders/{id}/process` → procesa pedido.
-  - `POST /api/Orders/{id}/discount` → aplica descuento.
-  - `POST /api/Orders/{id}/cancel` → cancela pedido.
-  - `POST /api/Orders/{id}/undo` → deshace la última operación sobre el pedido.
-- **Intención**  
-  Encapsular operaciones sobre pedidos como comandos, registrar el estado previo en `OrderHistory` (Memento) y permitir **deshacer** (RF7 y RF8).
-
----
-
-### Iterator – Catálogo de productos
-
-- **Clases clave**
-  - `ProductCatalog`, `CatalogService`
-  - `IProductCollection`, `IProductIterator`
-  - `ProductIterator`
-- **Endpoint**
-  - `GET /api/Catalog?pageNumber=&pageSize=&nameFilter=`
-- **Intención**  
-  Recorrer el catálogo con paginación y filtro de nombre sin exponer la estructura interna de la colección de productos (RF11 y RF12).
-
----
-
-## 🧠 Patrones GRASP en la solución
-
-- **Controller**  
-  - Los controladores Web API (`PaymentsController`, `OrdersController`, etc.) reciben la petición, validan y delegan en servicios de dominio.
-- **Low Coupling (bajo acoplamiento)**  
-  - Uso extensivo de **interfaces** (`IPaymentProcessor`, `IPriceStrategy`, `IStockObserver`, `IReportService`, `IOrderCommand`) y **Dependency Injection**.
-- **High Cohesion (alta cohesión)**  
-  - Cada servicio tiene una responsabilidad clara:
-    - `OrderService` se ocupa solo de pedidos.  
-    - `PricingService` solo de cálculo de precios.  
-    - `InventoryService` de inventario, etc.
-- **Polymorphism (polimorfismo)**  
-  - Variaciones de comportamiento se resuelven con implementaciones concretas de interfaces:
-    - Estrategias de precio, comandos de pedido, observers de stock, adapters de pago, etc.
-
----
-
-## ▶️ Cómo ejecutar el proyecto
-
-### Requisitos
-
-- **.NET SDK 8.0** o superior instalado.
-
-### Ejecutar la API
-
-```bash
-# Clonar el repositorio
-git clone https://github.com/JesusReymundo/TechSolutions.API.git
-cd TechSolutions.API
-
-# Ejecutar la Web API
-dotnet run --project TechSolutions.API/TechSolutions.API.csproj
-La API quedará expuesta en:
-
-text
-Copiar código
-http://localhost:5121/swagger
-✅ Pruebas unitarias
-Las pruebas están en el proyecto TechSolutions.Tests.
-
-Para ejecutarlas:
+Angular CLI (global):
 
 bash
 Copiar código
-cd TechSolutions.API
-dotnet test
-Resultados esperados: todas las pruebas Correctas (verde).
+npm install -g @angular/cli
+Navegador web moderno (Chrome, Edge, etc.)
 
-🔗 Enlaces adicionales (para el informe)
-Completar cuando estén listos.
+3. Cómo ejecutar el backend (TechSolutions.API)
+Abrir una terminal (PowerShell).
 
-Prototipo Figma (UI): [enlace pendiente]
+Ir a la carpeta del proyecto:
 
-Documento técnico (PDF): [enlace pendiente]
-
-📌 Trabajo futuro / mejoras
-Implementar un frontend (Angular/React) que consuma esta API.
-
-Persistir información en una base de datos (actualmente los datos son en memoria).
-
-Agregar más pruebas unitarias y de integración.
-
-Extender el catálogo y las estrategias de pricing con reglas más avanzadas.
-
-r
+bash
 Copiar código
-
-Cuando lo pegues:
-
-1. Guarda el archivo (`Ctrl+S`).
-2. En PowerShell:
-
-```powershell
 cd "C:\Patrones de Diseño de Software\TechSolutions.API"
-git add README.md
-git commit -m "Actualizar README con descripción de patrones y endpoints"
-git push
+Ejecutar la API:
 
+bash
+Copiar código
+dotnet run --project TechSolutions.API/TechSolutions.API.csproj
+Cuando compile, verás un mensaje similar a:
 
+Now listening on: http://localhost:5121
+
+Application started. Press Ctrl+C to shut down.
+
+Abrir la documentación Swagger en el navegador:
+
+text
+Copiar código
+http://localhost:5121/swagger/index.html
+Desde Swagger se pueden probar todos los endpoints de la API.
+
+4. Cómo ejecutar el frontend (techsolutions-web)
+Abrir otra terminal (sin cerrar la del backend).
+
+Ir a la carpeta del frontend:
+
+bash
+Copiar código
+cd "C:\Patrones de Diseño de Software\TechSolutions.API\techsolutions-web"
+Instalar dependencias (solo la primera vez):
+
+bash
+Copiar código
+npm install
+Levantar la aplicación Angular:
+
+bash
+Copiar código
+ng serve -o
+Esto abrirá automáticamente:
+
+text
+Copiar código
+http://localhost:4200
+La SPA mostrará el Dashboard con acceso a los módulos: Pagos, Órdenes, Inventario, Precios, Catálogo y Reportes.
+
+5. Módulos funcionales y patrones de diseño
+5.1. Pagos – Patrón Adapter
+Objetivo del caso:
+Integrar distintos proveedores de pago (PayPal, Yape, Plin) detrás de una interfaz común para el sistema.
+
+Clases principales (TechSolutions.Core.Payments):
+
+PaymentRequest, PaymentResult, PaymentMethod
+
+IPaymentProcessor (interfaz común)
+
+Adapters concretos:
+
+PayPalAdapter
+
+YapeAdapter
+
+PlinAdapter
+
+Cada adapter adapta la firma del proveedor real a la interfaz IPaymentProcessor.
+
+Infraestructura (TechSolutions.API.Services):
+
+PayPalService
+
+YapeService
+
+PlinService
+
+Controller:
+
+PaymentsController (/api/Payments)
+
+Funcionalidad:
+
+Registrar un pago con cualquier método.
+
+Habilitar / deshabilitar métodos desde PaymentConfiguration.
+
+Exponer configuración y operaciones vía API.
+
+5.2. Inventario – Patrón Observer
+Objetivo del caso:
+Detectar productos con stock crítico y notificar a distintos actores (jefe, compras, etc.).
+
+Clases principales (TechSolutions.Core.Inventory):
+
+InventoryItem
+
+InventoryService (sujeto/subject del patrón)
+
+Observers:
+
+IStockObserver (interfaz)
+
+ManagerStockObserver
+
+PurchasingStockObserver
+
+Cuando el stock de un producto baja del mínimo, InventoryService notifica a todos los observadores registrados.
+
+Controller:
+
+InventoryController (/api/Inventory)
+
+Endpoints:
+
+GET /api/Inventory – consulta del stock actual.
+
+POST /api/Inventory/adjust – ajuste de stock.
+
+PUT /api/Inventory/minimumStock – actualización de stock mínimo.
+
+5.3. Precios – Patrón Strategy
+Objetivo del caso:
+Aplicar distintas estrategias de precio según configuración (estándar, con descuento, dinámica).
+
+Clases principales (TechSolutions.Core.Pricing):
+
+PricingConfiguration
+
+IPriceStrategy (interfaz)
+
+Implementaciones:
+
+StandardPriceStrategy
+
+DiscountPriceStrategy
+
+DynamicPriceStrategy
+
+PricingService – selecciona la estrategia apropiada usando PricingConfiguration.
+
+Controller:
+
+PricingController (/api/Pricing)
+
+Endpoints:
+
+GET /api/Pricing/products – lista de productos con precio base.
+
+GET /api/Pricing/config – configuración actual.
+
+PUT /api/Pricing/config – actualizar la estrategia y parámetros.
+
+POST /api/Pricing/apply – calcular el precio final de un producto.
+
+5.4. Órdenes – Patrones Command + Memento
+Objetivo del caso:
+Gestionar el ciclo de vida de las órdenes y permitir deshacer la última operación.
+
+Clases principales (TechSolutions.Core.Orders):
+
+Entidad Order y OrderStatus.
+
+IOrderRepository / InMemoryOrderRepository.
+
+IOrderCommand (interfaz base de comandos).
+
+Comandos concretos:
+
+CreateOrderCommand
+
+ProcessOrderCommand
+
+CancelOrderCommand
+
+ApplyDiscountOrderCommand
+
+Memento / Historial:
+
+OrderMemento – guarda el estado de la orden.
+
+OrderCommandHistory – almacena el historial de comandos y snapshots.
+
+Servicio:
+
+OrderService – orquesta comandos, mementos y repositorio.
+
+Controller:
+
+OrdersController (/api/Orders)
+
+Endpoints típicos:
+
+GET /api/Orders – listar órdenes.
+
+POST /api/Orders – crear orden.
+
+GET /api/Orders/{id} – obtener detalle.
+
+POST /api/Orders/{id}/process – procesar.
+
+POST /api/Orders/{id}/cancel – cancelar.
+
+POST /api/Orders/{id}/discount – aplicar descuento.
+
+POST /api/Orders/undo – deshacer último comando.
+
+De esta forma se cumple el requerimiento de apostar por un diseño extensible, donde cada nueva operación sobre órdenes puede modelarse como un nuevo comando.
+
+5.5. Catálogo – Patrón Iterator
+Objetivo del caso:
+Recorrer el catálogo de productos y devolver páginas de resultados al frontend.
+
+Clases (TechSolutions.Core.Catalog):
+
+Product
+
+ProductCatalog – contiene la colección interna y ofrece un iterador.
+
+CatalogService – expone iteraciones y paginación.
+
+Controller:
+
+CatalogController (/api/Catalog)
+
+Permite listar el catálogo de forma paginada para el módulo de Catálogo en Angular.
+
+5.6. Reportes – Patrón Proxy
+Objetivo del caso:
+Proteger la generación de reportes financieros, permitiendo solo a usuarios con rol autorizado.
+
+Clases (TechSolutions.Core.Reports y Security):
+
+IReportService
+
+RealReportService – acceso real a la generación de reportes.
+
+ReportServiceProxy – controla acceso según el usuario.
+
+ICurrentUserContext / UserContext / UserRole.
+
+Infraestructura (TechSolutions.API.Services):
+
+HttpCurrentUserContext – obtiene el usuario a partir de encabezados HTTP (X-User-Name, X-User-Role).
+
+Controller:
+
+ReportsController (/api/Reports/monthly)
+
+Ejemplo de uso:
+
+Enviar encabezado X-User-Role: Administrator → acceso permitido.
+
+Enviar otro rol no autorizado → el proxy genera respuesta de acceso denegado.
+
+6. Seguridad y simulación de usuarios
+Para no implementar autenticación completa, el contexto de usuario se simula con headers HTTP:
+
+X-User-Name
+
+X-User-Role (Administrator, Manager, Viewer, etc.)
+
+HttpCurrentUserContext lee estos valores y construye un UserContext, que luego utiliza ReportServiceProxy para verificar si el usuario tiene permisos para ver reportes.
+
+7. CORS y consumo desde Angular
+En Program.cs se habilita CORS para permitir que el frontend Angular se comunique con la API:
+
+csharp
+Copiar código
+policy.WithOrigins("http://localhost:4200")
+      .AllowAnyHeader()
+      .AllowAnyMethod();
+Esto permite que las llamadas AJAX desde techsolutions-web funcionen sin errores de CORS durante el desarrollo local.
+
+8. Flujo de uso recomendado (demo)
+Catálogo
+
+Consultar el listado de productos en /api/Catalog o desde el módulo “Catálogo” en Angular.
+
+Precios
+
+Revisar la configuración actual en /api/Pricing/config.
+
+Cambiar la estrategia a “Descuento” y definir un porcentaje.
+
+Aplicar la estrategia a un producto y ver el nuevo precio.
+
+Inventario
+
+Consultar inventario actual.
+
+Ajustar stock de un producto por debajo del mínimo y observar las notificaciones generadas por los observers.
+
+Órdenes
+
+Crear una orden.
+
+Procesarla.
+
+Aplicar un descuento.
+
+Cancelarla.
+
+Probar POST /api/Orders/undo para deshacer la última operación mediante Memento.
+
+Pagos
+
+Configurar métodos de pago habilitados/deshabilitados.
+
+Registrar un pago de prueba utilizando PayPal, Yape o Plin.
+
+Reportes
+
+Llamar a /api/Reports/monthly:
+
+Con X-User-Role: Viewer → acceso denegado (Proxy bloquea).
+
+Con X-User-Role: Administrator → acceso permitido y reporte generado.
+
+9. Buenas prácticas aplicadas
+Separación clara entre dominio (Core) y capa de presentación (API/Angular).
+
+Uso intensivo de Inversión de Dependencias e Inyección de Dependencias en Program.cs.
+
+Aplicación de varios patrones de diseño de software alineados con el caso TechSolutions.
+
+API documentada con Swagger para facilitar pruebas y mantenimiento.
+
+Frontend SPA que consume todos los endpoints definidos y refleja los flujos de negocio del caso.
+
+makefile
+Copiar código
+::contentReference[oaicite:0]{index=0}
 
 
 

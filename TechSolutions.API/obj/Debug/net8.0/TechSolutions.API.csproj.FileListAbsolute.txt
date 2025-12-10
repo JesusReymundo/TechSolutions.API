@@ -33,3 +33,4 @@ C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.API\obj\Debug
 C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.API\obj\Debug\net8.0\TechSolutions.API.pdb
 C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.API\obj\Debug\net8.0\TechSolutions.API.genruntimeconfig.cache
 C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.API\obj\Debug\net8.0\ref\TechSolutions.API.dll
+C:\Patrones de Diseño de Software\TechSolutions.API\TechSolutions.API\obj\Debug\net8.0\TechSolutions.API.sourcelink.json

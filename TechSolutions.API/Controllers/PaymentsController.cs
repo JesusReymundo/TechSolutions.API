@@ -1,6 +1,6 @@
-using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using TechSolutions.API.Dtos;
+using System.Collections.Generic;
+using System.Linq;
 using TechSolutions.Core.Payments;
 
 namespace TechSolutions.API.Controllers
@@ -9,70 +9,72 @@ namespace TechSolutions.API.Controllers
     [Route("api/[controller]")]
     public class PaymentsController : ControllerBase
     {
-        private readonly IEnumerable<IPaymentProcessor> _processors;
-        private readonly PaymentConfiguration _configuration;
+        private readonly PaymentConfiguration _config;
+        private readonly IPaymentProcessor[] _processors;
 
-        public PaymentsController(
-            IEnumerable<IPaymentProcessor> processors,
-            PaymentConfiguration configuration)
+        public PaymentsController(PaymentConfiguration config, IEnumerable<IPaymentProcessor> processors)
         {
-            _processors = processors;
-            _configuration = configuration;
+            _config = config;
+            _processors = processors.ToArray();
         }
 
-        // POST: api/Payments
         [HttpPost]
-        public async Task<ActionResult<PaymentResult>> ProcessPayment(
-            [FromBody] PaymentRequest request,
-            CancellationToken cancellationToken)
+        public ActionResult<PaymentResult> Process([FromBody] PaymentRequest request)
         {
-            if (!_configuration.IsEnabled(request.Method))
+            if (!_config.Enabled)
             {
-                return BadRequest(new
+                return BadRequest(new PaymentResult
                 {
-                    message = $"La pasarela {request.Method} se encuentra deshabilitada por configuración."
+                    Success = false,
+                    ErrorMessage = "Los pagos están deshabilitados desde la configuración."
+                });
+            }
+
+            if (!_config.EnabledMethods.Contains(request.Method))
+            {
+                return BadRequest(new PaymentResult
+                {
+                    Success = false,
+                    ErrorMessage = "El método de pago seleccionado no está habilitado."
                 });
             }
 
             var processor = _processors.FirstOrDefault(p => p.Method == request.Method);
-
             if (processor == null)
             {
-                return BadRequest(new { message = "No existe un procesador para el método indicado." });
+                return BadRequest(new PaymentResult
+                {
+                    Success = false,
+                    ErrorMessage = "No hay un adaptador configurado para este método."
+                });
             }
 
-            var result = await processor.ProcessAsync(request, cancellationToken);
-
+            var result = processor.ProcessPayment(request);
             return Ok(result);
         }
 
-        // ---------- RF2: configuración de pasarelas ----------
-
-        // GET: api/Payments/config
         [HttpGet("config")]
-        public ActionResult GetConfig()
+        public ActionResult<object> GetConfig()
         {
-            var enabled = _configuration.GetEnabledMethods()
-                .Select(m => m.ToString())
-                .ToList();
-
-            return Ok(new { enabledMethods = enabled });
+            return Ok(new
+            {
+                enabled = _config.Enabled,
+                enabledMethods = _config.EnabledMethods
+            });
         }
 
-        // POST: api/Payments/config/enable
         [HttpPost("config/enable")]
-        public ActionResult Enable([FromBody] UpdatePaymentGatewayRequest request)
+        public IActionResult Enable()
         {
-            _configuration.Enable(request.Method);
-            return NoContent();
+            _config.Enabled = true;
+            return Ok(new { enabled = true });
         }
 
-        // POST: api/Payments/config/disable
         [HttpPost("config/disable")]
-        public ActionResult Disable([FromBody] UpdatePaymentGatewayRequest request)
+        public IActionResult Disable()
         {
-            _configuration.Disable(request.Method);
-            return NoContent();
+            _config.Enabled = false;
+            return Ok(new { enabled = false });
         }
     }
 }

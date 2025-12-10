@@ -1,0 +1,97 @@
+<div class="page">
+  <header class="page-header">
+    <h1 class="page-header-title">Dashboard</h1>
+    <p class="page-header-subtitle">
+      Bienvenido a la plataforma TechSolutions. Resumen rápido de la operación.
+    </p>
+  </header>
+
+  <section class="kpi-grid">
+    <article class="card">
+      <h3 class="kpi-card-title">Ventas del mes</h3>
+      <p class="kpi-value">S/ 125,430</p>
+      <div class="kpi-bar">
+        <div class="kpi-bar-inner" style="width: 72%"></div>
+      </div>
+      <p class="kpi-trend">+12% vs. mes anterior</p>
+    </article>
+
+    <article class="card">
+      <h3 class="kpi-card-title">Órdenes procesadas</h3>
+      <p class="kpi-value">328</p>
+      <div class="kpi-bar">
+        <div class="kpi-bar-inner" style="width: 58%"></div>
+      </div>
+      <p class="kpi-trend">92% completadas sin errores</p>
+    </article>
+
+    <article class="card">
+      <h3 class="kpi-card-title">Stock en riesgo</h3>
+      <p class="kpi-value">3 ítems</p>
+      <div class="kpi-bar">
+        <div class="kpi-bar-inner" style="width: 35%"></div>
+      </div>
+      <p class="kpi-trend">Revisar alertas de inventario</p>
+    </article>
+
+    <article class="card">
+      <h3 class="kpi-card-title">Pagos del día</h3>
+      <p class="kpi-value">S/ 4,850</p>
+      <div class="kpi-bar">
+        <div class="kpi-bar-inner" style="width: 40%"></div>
+      </div>
+      <p class="kpi-trend">3 pagos observados por validación</p>
+    </article>
+  </section>
+
+  <section class="card">
+    <header class="card-header">
+      <h2 class="card-title">Módulos principales</h2>
+      <p class="page-header-subtitle">
+        Accesos rápidos a las funcionalidades clave.
+      </p>
+    </header>
+
+    <div class="card-grid">
+      <article class="card">
+        <h3 class="kpi-card-title">Pagos</h3>
+        <p class="kpi-trend">
+          Gestiona pasarelas, medios de pago y conciliación básica.
+        </p>
+        <button class="btn btn-primary btn-sm" routerLink="/payments">
+          Ir a pagos
+        </button>
+      </article>
+
+      <article class="card">
+        <h3 class="kpi-card-title">Órdenes</h3>
+        <p class="kpi-trend">
+          Crea, procesa, cancela y revierte órdenes comerciales.
+        </p>
+        <button class="btn btn-primary btn-sm" routerLink="/orders">
+          Ir a órdenes
+        </button>
+      </article>
+
+      <article class="card">
+        <h3 class="kpi-card-title">Inventario</h3>
+        <p class="kpi-trend">
+          Controla stock disponible y niveles mínimos por producto.
+        </p>
+        <button class="btn btn-primary btn-sm" routerLink="/inventory">
+          Ir a inventario
+        </button>
+      </article>
+
+      <article class="card">
+        <h3 class="kpi-card-title">Reportes</h3>
+        <p class="kpi-trend">
+          Genera el reporte financiero mensual consolidado por rol.
+        </p>
+        <button class="btn btn-primary btn-sm" routerLink="/reports">
+          Ver reportes
+        </button>
+      </article>
+    </div>
+  </section>
+</div>

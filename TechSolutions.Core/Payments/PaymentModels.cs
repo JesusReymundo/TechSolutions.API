@@ -1,10 +1,12 @@
+using System;
+
 namespace TechSolutions.Core.Payments
 {
     public enum PaymentMethod
     {
-        PayPal = 0,
-        Yape = 1,
-        Plin = 2
+        PayPal = 1,
+        Yape = 2,
+        Plin = 3
     }
 
     public class PaymentRequest
@@ -12,9 +14,6 @@ namespace TechSolutions.Core.Payments
         public decimal Amount { get; set; }
         public string Currency { get; set; } = "PEN";
         public PaymentMethod Method { get; set; }
-        /// <summary>
-        /// Email (PayPal) o número de celular (Yape/Plin)
-        /// </summary>
         public string CustomerIdentifier { get; set; } = string.Empty;
     }
 
@@ -23,5 +22,12 @@ namespace TechSolutions.Core.Payments
         public bool Success { get; set; }
         public string? TransactionId { get; set; }
         public string? ErrorMessage { get; set; }
+
+        public PaymentMethod Method { get; set; }
+        public decimal Amount { get; set; }
+        public string Currency { get; set; } = "PEN";
+
+        public string ExecutedBy { get; set; } = string.Empty;
+        public DateTime ExecutedAt { get; set; } = DateTime.UtcNow;
     }
 }

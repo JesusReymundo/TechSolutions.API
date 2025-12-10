@@ -1,0 +1,75 @@
+<div class="page">
+  <header class="page-header">
+    <h1 class="page-header-title">Inventario</h1>
+    <p class="page-header-subtitle">
+      Ajusta stock disponible y define niveles mínimos por producto.
+    </p>
+  </header>
+
+  <section class="card">
+    <p *ngIf="message" class="alert alert-info">
+      {{ message }}
+    </p>
+
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Stock actual</th>
+            <th>Stock mínimo</th>
+            <th>Ajuste</th>
+            <th>Nuevo mínimo</th>
+            <th style="width: 210px">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td>{{ item.productName }}</td>
+            <td>{{ item.currentStock }}</td>
+            <td>{{ item.minimumStock }}</td>
+            <td>
+              <input
+                type="number"
+                [(ngModel)]="deltas[item.productId]"
+                name="delta-{{ item.productId }}"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                [(ngModel)]="newMinimums[item.productId]"
+                name="min-{{ item.productId }}"
+              />
+            </td>
+            <td>
+              <button
+                class="btn btn-primary btn-sm"
+                type="button"
+                (click)="adjustStock(item)"
+              >
+                Actualizar stock
+              </button>
+              <button
+                class="btn btn-secondary btn-sm"
+                type="button"
+                (click)="updateMinimumStock(item)"
+              >
+                Actualizar mínimo
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="notifications.length" style="margin-top: 1rem">
+      <h3 class="kpi-card-title">Alertas generadas</h3>
+      <ul>
+        <li *ngFor="let n of notifications">
+          {{ n }}
+        </li>
+      </ul>
+    </div>
+  </section>
+</div>

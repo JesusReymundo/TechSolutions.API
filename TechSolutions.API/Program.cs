@@ -1,15 +1,28 @@
 using TechSolutions.Core.Payments;
 using TechSolutions.Core.Reports;
 using TechSolutions.Core.Security;
-using TechSolutions.API.Services;
 using TechSolutions.Core.Inventory;
 using TechSolutions.Core.Pricing;
 using TechSolutions.Core.Orders;
 using TechSolutions.Core.Catalog;
+using TechSolutions.API.Services; // <- aquí vive HttpCurrentUserContext
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ---------- CORS: permitir frontend Angular ----------
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
+    {
+        policy.WithOrigins("http://localhost:4200") // frontend
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+// ---------- Controllers ----------
 builder.Services.AddControllers();
 
 // ---------- PAGOS (Adapter) ----------
@@ -17,6 +30,7 @@ builder.Services.AddScoped<PayPalService>();
 builder.Services.AddScoped<YapeService>();
 builder.Services.AddScoped<PlinService>();
 
+// Usamos los adapters del Core
 builder.Services.AddScoped<IPaymentProcessor, PayPalAdapter>();
 builder.Services.AddScoped<IPaymentProcessor, YapeAdapter>();
 builder.Services.AddScoped<IPaymentProcessor, PlinAdapter>();
@@ -42,7 +56,9 @@ builder.Services.AddScoped<IPriceStrategy, DiscountPriceStrategy>();
 builder.Services.AddScoped<IPriceStrategy, DynamicPriceStrategy>();
 
 // ---------- PEDIDOS (Command + Memento) ----------
-builder.Services.AddSingleton<OrderService>();
+builder.Services.AddSingleton<IOrderRepository, InMemoryOrderRepository>();
+builder.Services.AddSingleton<OrderCommandHistory>();
+builder.Services.AddScoped<OrderService>();
 
 // ---------- CATÁLOGO (Iterator) ----------
 builder.Services.AddSingleton<ProductCatalog>();
@@ -60,6 +76,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// aplicar CORS antes de Authorization
+app.UseCors(MyAllowSpecificOrigins);
 
 app.UseAuthorization();
 

@@ -1,0 +1,93 @@
+<div class="page">
+  <header class="page-header">
+    <h1 class="page-header-title">Reporte mensual</h1>
+    <p class="page-header-subtitle">
+      Genera un resumen financiero por año, mes y rol usando
+      <code>/api/Reports/monthly</code>.
+    </p>
+  </header>
+
+  <section class="card">
+    <form class="form-grid" (ngSubmit)="generateReport()" #reportForm="ngForm">
+      <div class="form-field">
+        <label for="year">Año</label>
+        <input
+          id="year"
+          type="number"
+          name="year"
+          [(ngModel)]="year"
+          required
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="month">Mes</label>
+        <input
+          id="month"
+          type="number"
+          min="1"
+          max="12"
+          name="month"
+          [(ngModel)]="month"
+          required
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="userName">Usuario</label>
+        <input
+          id="userName"
+          type="text"
+          name="userName"
+          [(ngModel)]="userName"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="role">Rol</label>
+        <select id="role" name="role" [(ngModel)]="role">
+          <option value="">Todos</option>
+          <option value="Admin">Admin</option>
+          <option value="Finance">Finance</option>
+          <option value="Sales">Sales</option>
+        </select>
+      </div>
+
+      <div class="form-field" style="align-self: end">
+        <button
+          class="btn btn-primary"
+          type="submit"
+          [disabled]="reportForm.invalid"
+        >
+          Generar reporte
+        </button>
+      </div>
+    </form>
+
+    <p *ngIf="errorMessage" class="alert alert-error">
+      {{ errorMessage }}
+    </p>
+
+    <section class="card" *ngIf="report" style="margin-top: 1rem">
+      <h2 class="card-title">
+        Reporte {{ report.month }}/{{ report.year }}
+      </h2>
+      <p>
+        <strong>Total ventas:</strong>
+        {{ report.totalSales | currency: 'PEN':'symbol':'1.2-2' }}
+      </p>
+      <p>
+        <strong>Total costos:</strong>
+        {{ report.totalCosts | currency: 'PEN':'symbol':'1.2-2' }}
+      </p>
+      <p>
+        <strong>Utilidad:</strong>
+        {{ report.profit | currency: 'PEN':'symbol':'1.2-2' }}
+      </p>
+      <p class="kpi-trend">
+        Generado por {{ report.generatedBy }} el
+        {{ report.generatedAt | date: 'short' }}.
+      </p>
+    </section>
+  </section>
+</div>

@@ -1,68 +1,99 @@
+using System;
 using System.Collections.Generic;
 
 namespace TechSolutions.Core.Orders
 {
+    /// <summary>
+    /// Servicio de dominio para pedidos (Command + Memento).
+    /// </summary>
     public class OrderService
     {
-        private readonly Dictionary<int, Order> _orders = new();
-        private readonly OrderHistory _history = new();
-        private int _nextId = 1;
+        private readonly IOrderRepository _repository;
+        private readonly OrderCommandHistory _history;
 
-        public IReadOnlyCollection<Order> GetAll() => _orders.Values;
-
-        public Order GetById(int id)
+        public OrderService(IOrderRepository repository, OrderCommandHistory history)
         {
-            if (!_orders.TryGetValue(id, out var order))
-                throw new KeyNotFoundException($"Pedido {id} no encontrado.");
+            _repository = repository;
+            _history = history;
+        }
+
+        // -------- Consultas --------
+
+        public IEnumerable<Order> GetAllOrders()
+            => _repository.GetAll();
+
+        public Order? GetOrderById(Guid id)
+            => _repository.GetById(id);
+
+        // -------- Comandos --------
+
+        public Order CreateOrder(string customerName, decimal amount, string description)
+        {
+            if (string.IsNullOrWhiteSpace(customerName))
+                throw new ArgumentException("Customer name is required.", nameof(customerName));
+            if (amount <= 0)
+                throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
+
+            var order = new Order(customerName, amount, description);
+
+            _repository.Add(order);
+
+            IOrderCommand command = new CreateOrderCommand(customerName, amount, description);
+            _history.SaveSnapshot(order, command);
+            command.Execute(order);
 
             return order;
         }
 
-        public Order CreateOrder(string customerName, decimal amount)
+        public Order? ProcessOrder(Guid id)
         {
-            var order = new Order
-            {
-                Id = _nextId++,
-                CustomerName = customerName,
-                Amount = amount,
-                DiscountPercentage = 0m,
-                Status = OrderStatus.Created
-            };
+            var order = _repository.GetById(id);
+            if (order == null) return null;
 
-            _orders.Add(order.Id, order);
-            _history.SaveState(order);
+            IOrderCommand command = new ProcessOrderCommand();
+            _history.SaveSnapshot(order, command);
+            command.Execute(order);
+            _repository.Update(order);
 
             return order;
         }
 
-        public Order Process(int id)
+        public Order? CancelOrder(Guid id)
         {
-            var order = GetById(id);
-            var command = new ProcessOrderCommand();
-            command.Execute(order, _history);
+            var order = _repository.GetById(id);
+            if (order == null) return null;
+
+            IOrderCommand command = new CancelOrderCommand();
+            _history.SaveSnapshot(order, command);
+            command.Execute(order);
+            _repository.Update(order);
+
             return order;
         }
 
-        public Order ApplyDiscount(int id, decimal discount)
+        public Order? ApplyDiscount(Guid id, decimal percentage)
         {
-            var order = GetById(id);
-            var command = new ApplyDiscountCommand(discount);
-            command.Execute(order, _history);
+            var order = _repository.GetById(id);
+            if (order == null) return null;
+
+            IOrderCommand command = new ApplyDiscountOrderCommand(percentage);
+            _history.SaveSnapshot(order, command);
+            command.Execute(order);
+            _repository.Update(order);
+
             return order;
         }
 
-        public Order Cancel(int id)
+        public Order? UndoLast(Guid id)
         {
-            var order = GetById(id);
-            var command = new CancelOrderCommand();
-            command.Execute(order, _history);
-            return order;
-        }
+            var order = _repository.GetById(id);
+            if (order == null) return null;
 
-        public bool UndoLast(int id)
-        {
-            var order = GetById(id);
-            return _history.TryRestoreLastState(order);
+            var restored = _history.TryRestoreLastSnapshot(order);
+            if (!restored) return null;
+
+            _repository.Update(order);
+            return order;
         }
     }
 }

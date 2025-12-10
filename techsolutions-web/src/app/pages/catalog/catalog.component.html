@@ -1,0 +1,82 @@
+<div class="page">
+  <header class="page-header">
+    <h1 class="page-header-title">Catálogo de productos</h1>
+    <p class="page-header-subtitle">
+      Consulta el catálogo expuesto por la API de catálogo.
+    </p>
+  </header>
+
+  <section class="card">
+    <form class="form-grid" (ngSubmit)="applyFilters()">
+      <div class="form-field">
+        <label for="nameFilter">Nombre</label>
+        <input
+          id="nameFilter"
+          type="text"
+          name="nameFilter"
+          [(ngModel)]="nameFilter"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="pageSize">Tamaño de página</label>
+        <input
+          id="pageSize"
+          type="number"
+          name="pageSize"
+          [(ngModel)]="pageSize"
+          min="1"
+        />
+      </div>
+
+      <div class="form-field" style="align-self: end">
+        <button class="btn btn-primary" type="submit">
+          Buscar
+        </button>
+      </div>
+    </form>
+
+    <div class="table-wrapper" *ngIf="page">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Id</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Precio</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of page.items">
+            <td>{{ p.id }}</td>
+            <td>{{ p.name }}</td>
+            <td>{{ p.category }}</td>
+            <td>{{ p.price | currency: 'PEN':'symbol':'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="pagination">
+        <div>
+          Página {{ page.page }} de {{ page.totalPages }}
+        </div>
+        <div>
+          <button
+            type="button"
+            (click)="loadPage(page.page - 1)"
+            [disabled]="page.page === 1"
+          >
+            Anterior
+          </button>
+          <button
+            type="button"
+            (click)="loadPage(page.page + 1)"
+            [disabled]="page.page === page.totalPages"
+          >
+            Siguiente
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

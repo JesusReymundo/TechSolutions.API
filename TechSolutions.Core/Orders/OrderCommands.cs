@@ -2,56 +2,102 @@ using System;
 
 namespace TechSolutions.Core.Orders
 {
+    public interface IOrderCommand
+    {
+        string Description { get; }
+
+        void Execute(Order order);
+        void Undo(Order order);
+    }
+
+    // ---- Create ----
+    public class CreateOrderCommand : IOrderCommand
+    {
+        public string CustomerName { get; }
+        public decimal Amount { get; }
+        public string Details { get; }
+
+        public string Description => $"Crear orden para {CustomerName}";
+
+        public CreateOrderCommand(string customerName, decimal amount, string details)
+        {
+            CustomerName = customerName;
+            Amount = amount;
+            Details = details;
+        }
+
+        public void Execute(Order order)
+        {
+            // La orden ya fue creada por el servicio.
+        }
+
+        public void Undo(Order order)
+        {
+            // Deshacer creación: marcamos como cancelada.
+            order.Cancel();
+        }
+    }
+
+    // ---- Process ----
     public class ProcessOrderCommand : IOrderCommand
     {
-        public string Name => "Process";
+        public string Description => "Procesar orden";
 
-        public void Execute(Order order, OrderHistory history)
+        public void Execute(Order order)
         {
-            if (order.Status == OrderStatus.Cancelled)
-                throw new InvalidOperationException("No se puede procesar un pedido cancelado.");
+            order.MarkProcessed();
+        }
 
-            history.SaveState(order);
-            order.Status = OrderStatus.Processed;
+        public void Undo(Order order)
+        {
+            order.Restore(new OrderMemento(
+                OrderStatus.Pending,
+                order.Amount,
+                order.DiscountPercentage));
         }
     }
 
+    // ---- Cancel ----
     public class CancelOrderCommand : IOrderCommand
     {
-        public string Name => "Cancel";
+        public string Description => "Cancelar orden";
 
-        public void Execute(Order order, OrderHistory history)
+        public void Execute(Order order)
         {
-            if (order.Status == OrderStatus.Cancelled)
-                throw new InvalidOperationException("El pedido ya está cancelado.");
+            order.Cancel();
+        }
 
-            history.SaveState(order);
-            order.Status = OrderStatus.Cancelled;
+        public void Undo(Order order)
+        {
+            order.Restore(new OrderMemento(
+                OrderStatus.Pending,
+                order.Amount,
+                order.DiscountPercentage));
         }
     }
 
-    public class ApplyDiscountCommand : IOrderCommand
+    // ---- Apply Discount ----
+    public class ApplyDiscountOrderCommand : IOrderCommand
     {
-        private readonly decimal _discount;
+        private readonly decimal _percentage;
+        private decimal _previousPercentage;
 
-        public ApplyDiscountCommand(decimal discount)
+        public string Description => $"Aplicar descuento de {_percentage}%";
+
+        public ApplyDiscountOrderCommand(decimal percentage)
         {
-            _discount = discount;
+            _percentage = percentage;
         }
 
-        public string Name => "ApplyDiscount";
-
-        public void Execute(Order order, OrderHistory history)
+        public void Execute(Order order)
         {
-            if (order.Status == OrderStatus.Cancelled)
-                throw new InvalidOperationException("No se puede aplicar descuento a un pedido cancelado.");
+            _previousPercentage = order.DiscountPercentage;
+            order.ApplyDiscount(_percentage);
+        }
 
-            if (_discount < 0m || _discount > 0.90m)
-                throw new ArgumentOutOfRangeException(nameof(_discount),
-                    "El descuento debe estar entre 0% y 90%.");
-
-            history.SaveState(order);
-            order.DiscountPercentage = _discount;
+        public void Undo(Order order)
+        {
+            order.ApplyDiscount(_previousPercentage);
         }
     }
 }

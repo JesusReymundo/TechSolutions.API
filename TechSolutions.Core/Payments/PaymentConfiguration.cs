@@ -2,21 +2,37 @@ using System.Collections.Generic;
 
 namespace TechSolutions.Core.Payments
 {
+    /// <summary>
+    /// Configuración de pagos (activa/inactiva, métodos permitidos, límites, etc.).
+    /// </summary>
     public class PaymentConfiguration
     {
-        private readonly HashSet<PaymentMethod> _enabledMethods = new()
-        {
-            PaymentMethod.PayPal,
-            PaymentMethod.Yape,
-            PaymentMethod.Plin
-        };
+        /// <summary>
+        /// Indica si el procesamiento de pagos está habilitado en el sistema.
+        /// (esto es lo que usa el controlador: config.Enabled)
+        /// </summary>
+        public bool Enabled { get; set; } = true;
 
-        public IReadOnlyCollection<PaymentMethod> GetEnabledMethods() => _enabledMethods;
+        /// <summary>
+        /// Métodos de pago permitidos.
+        /// </summary>
+        public List<PaymentMethod> EnabledMethods { get; set; } =
+            new List<PaymentMethod>
+            {
+                PaymentMethod.PayPal,
+                PaymentMethod.Yape,
+                PaymentMethod.Plin
+            };
 
-        public bool IsEnabled(PaymentMethod method) => _enabledMethods.Contains(method);
+        /// <summary>
+        /// Monto máximo permitido por transacción.
+        /// </summary>
+        public decimal MaxAmount { get; set; } = 10000m;
 
-        public void Enable(PaymentMethod method) => _enabledMethods.Add(method);
-
-        public void Disable(PaymentMethod method) => _enabledMethods.Remove(method);
+        /// <summary>
+        /// Moneda por defecto.
+        /// </summary>
+        public string DefaultCurrency { get; set; } = "PEN";
     }
 }
+

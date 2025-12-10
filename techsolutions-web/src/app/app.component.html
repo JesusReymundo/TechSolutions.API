@@ -1,0 +1,44 @@
+<div class="app-shell">
+  <header class="app-header">
+    <div class="app-logo">
+      <span>TechSolutions</span>
+      <span>Web</span>
+    </div>
+
+    <nav class="app-nav">
+      <a
+        routerLink="/dashboard"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="app-nav-link"
+        >Dashboard</a
+      >
+      <a routerLink="/payments" routerLinkActive="active" class="app-nav-link"
+        >Pagos</a
+      >
+      <a routerLink="/orders" routerLinkActive="active" class="app-nav-link"
+        >Órdenes</a
+      >
+      <a routerLink="/inventory" routerLinkActive="active" class="app-nav-link"
+        >Inventario</a
+      >
+      <a routerLink="/pricing" routerLinkActive="active" class="app-nav-link"
+        >Precios</a
+      >
+      <a routerLink="/catalog" routerLinkActive="active" class="app-nav-link"
+        >Catálogo</a
+      >
+      <a routerLink="/reports" routerLinkActive="active" class="app-nav-link"
+        >Reportes</a
+      >
+    </nav>
+  </header>
+
+  <main class="app-main">
+    <router-outlet></router-outlet>
+  </main>
+
+  <footer class="app-footer">
+    © 2025 TechSolutions · Plataforma de gestión
+  </footer>
+</div>
